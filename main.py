@@ -1,6 +1,6 @@
 import sys
 import ctypes
-from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout
+from PyQt5.QtWidgets import QApplication, QWidget, QPushButton, QVBoxLayout, QSlider, QLabel
 from PyQt5.QtCore import Qt, QRect, QTimer, QPoint
 from PyQt5.QtGui import QPainter, QColor, QCursor
 
@@ -30,7 +30,10 @@ class RegionOverlay(QWidget):
         self.setGeometry(x, y, w, h)
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
-        self.tint = QColor(*color, int(opacity * 255))
+
+        self.color = color
+        self.opacity = opacity
+        self._update_tint()
 
         self._dragging = False
         self._drag_start = QPoint()
@@ -39,18 +42,20 @@ class RegionOverlay(QWidget):
         self.pass_through = True
         QTimer.singleShot(100, self.enable_pass_through)
 
+    def _update_tint(self):
+        r, g, b = self.color
+        self.tint = QColor(r, g, b, int(self.opacity * 255))
+        self.update()
+
     def enable_pass_through(self):
-        """Apply native click-through (Windows only)."""
         hwnd = int(self.winId())
         set_click_through(hwnd, True)
 
     def disable_pass_through(self):
-        """Disable click-through (allow dragging)."""
         hwnd = int(self.winId())
         set_click_through(hwnd, False)
 
     def set_pass_through(self, enable: bool):
-        """Toggle between click-through and interactive."""
         self.pass_through = enable
         if enable:
             self.enable_pass_through()
@@ -58,6 +63,11 @@ class RegionOverlay(QWidget):
         else:
             self.disable_pass_through()
             self.setCursor(QCursor(Qt.SizeAllCursor))
+
+    def set_opacity_level(self, level: int):
+        """Set intensity from 0–100."""
+        self.opacity = level / 100.0
+        self._update_tint()
 
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -132,7 +142,7 @@ class MainWindow(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Eye Care")
-        self.setFixedSize(220, 150)
+        self.setFixedSize(220, 200)
         self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.WindowCloseButtonHint)
 
         layout = QVBoxLayout()
@@ -140,8 +150,17 @@ class MainWindow(QWidget):
         self.btn_toggle = QPushButton("Click-through: ON")
         self.btn_toggle.setEnabled(False)
 
+        self.intensity_label = QLabel("Intensity: 45%")
+        self.intensity_slider = QSlider(Qt.Horizontal)
+        self.intensity_slider.setRange(5, 100)
+        self.intensity_slider.setValue(45)
+        self.intensity_slider.valueChanged.connect(self.update_intensity)
+        self.intensity_slider.setEnabled(False)
+
         layout.addWidget(self.btn_select)
         layout.addWidget(self.btn_toggle)
+        layout.addWidget(self.intensity_label)
+        layout.addWidget(self.intensity_slider)
         self.setLayout(layout)
 
         self.selector = None
@@ -162,9 +181,10 @@ class MainWindow(QWidget):
         print("Applying tint to:", rect)
         if self.overlay:
             self.overlay.close()
-        self.overlay = RegionOverlay(x, y, w, h)
+        self.overlay = RegionOverlay(x, y, w, h, opacity=self.intensity_slider.value() / 100)
         self.overlay.show()
         self.btn_toggle.setEnabled(True)
+        self.intensity_slider.setEnabled(True)
 
     def toggle_pass_through(self):
         if not self.overlay:
@@ -173,13 +193,16 @@ class MainWindow(QWidget):
         self.overlay.set_pass_through(new_state)
         self.btn_toggle.setText(f"Click-through: {'ON' if new_state else 'OFF'}")
 
+    def update_intensity(self, value):
+        if self.overlay:
+            self.overlay.set_opacity_level(value)
+        self.intensity_label.setText(f"Intensity: {value}%")
 
 def main():
     app = QApplication(sys.argv)
     w = MainWindow()
     w.show()
     sys.exit(app.exec_())
-
 
 if __name__ == "__main__":
     main()
