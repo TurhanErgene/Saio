@@ -1,0 +1,15 @@
+VSVersionInfo(
+  ffi=FixedFileInfo(filevers=(2, 0, 0, 0), prodvers=(2, 0, 0, 0)),
+  kids=[
+    StringFileInfo([StringTable("040904B0", [
+      StringStruct("CompanyName", "Turhan Ergene"),
+      StringStruct("FileDescription", "Saio - screen color filters"),
+      StringStruct("FileVersion", "2.0.0"),
+      StringStruct("InternalName", "Saio"),
+      StringStruct("OriginalFilename", "Saio.exe"),
+      StringStruct("ProductName", "Saio"),
+      StringStruct("ProductVersion", "2.0.0"),
+    ])]),
+    VarFileInfo([VarStruct("Translation", [1033, 1200])]),
+  ],
+)
