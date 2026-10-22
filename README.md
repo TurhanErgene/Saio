@@ -4,6 +4,8 @@
 
 Screen color filters for Windows: tint, invert, or desaturate any part of the screen (or the whole screen) without hiding what's underneath.
 
+![A Saio region cycling through filters over the right half of a page](docs/demo.gif)
+
 ## How it works
 
 Saio uses the Windows **Magnification API**. Each region is a click-through window that shows a live copy of the screen beneath it, passed through a 5×5 color matrix. Because the filter *transforms* pixels rather than painting over them, a 100%-intensity warm filter still shows everything underneath, just warmer.
